@@ -155,13 +155,25 @@ let fuzzingTimer timeoutSec queueDir = async {
   printLine "Fuzzing timeout expired."
   log "===== Statistics ====="
   Manager.printStatistics ()
-  log "Done, clean up and exit..."
+  exit (0)
+}
+
+let cleanup f x =
   Executor.cleanUpForkServer ()
   Executor.cleanUpSharedMem ()
   Executor.cleanUpFiles ()
-  removeDir queueDir
-  exit (0)
-}
+  f x
+
+let initialize queueDir =
+  let current = System.AppDomain.CurrentDomain in
+  let logmessage msg f x =
+      log msg
+      f x
+  in
+  let newhandler msg (_ : System.EventArgs) = logmessage msg cleanup removeDir queueDir
+  in
+  newhandler "Done, clean up and exit..." |> current.ProcessExit.Add
+  newhandler "Ctrl+C was used. Cleaning up..." |> System.Console.CancelKeyPress.Add
 
 let run args =
   let opt = parseFuzzOption args
@@ -184,5 +196,6 @@ let run args =
   let randFuzzQueue = RandFuzzQueue.initialize queueDir
   let randFuzzQueue = List.fold RandFuzzQueue.enqueue randFuzzQueue initItems
   log "Fuzzing starts"
+  initialize queueDir
   Async.Start (fuzzingTimer opt.Timelimit queueDir)
   fuzzLoop opt greyConcQueue randFuzzQueue
