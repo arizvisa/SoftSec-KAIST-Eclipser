@@ -197,5 +197,6 @@ let run args =
   let randFuzzQueue = List.fold RandFuzzQueue.enqueue randFuzzQueue initItems
   log "Fuzzing starts"
   initialize queueDir
-  Async.Start (fuzzingTimer opt.Timelimit queueDir)
+  if opt.Timelimit < 0 then
+    Async.Start (fuzzingTimer opt.Timelimit queueDir)
   fuzzLoop opt greyConcQueue randFuzzQueue
