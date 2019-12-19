@@ -7,7 +7,7 @@ open Config
 type FuzzerCLI =
   | [<AltCommandLine("-p")>] [<Mandatory>] [<Unique>] Program of path: string
   | [<AltCommandLine("-v")>] [<Unique>] Verbose of int
-  | [<AltCommandLine("-t")>] [<Mandatory>] [<Unique>] Timelimit of sec: int
+  | [<AltCommandLine("-t")>] [<Unique>] Timelimit of sec: int
   | [<AltCommandLine("-o")>] [<Mandatory>] [<Unique>] OutputDir of path: string
   | [<Mandatory>] [<Unique>] Src of string
   // Options related to seed initialization
@@ -32,7 +32,9 @@ with
       match s with
       | Program _ -> "Target program for test case generation with fuzzing."
       | Verbose _ -> "Verbosity level to control debug messages (default:0)."
-      | Timelimit _ -> "Timeout for fuzz testing (in seconds)."
+      | Timelimit _ -> "Amount of time to run fuzzer (default:infinity).\n" +
+                       "If seconds is < 0, timer is disabled and will result\n" +
+                       "in fuzzing until external termination or Ctrl+C."
       | OutputDir _ -> "Directory to store testcase outputs."
       | Src _ -> "Input source to fuzz (<arg|file|stdin|auto>).\n" +
                  "In case of 'auto', fuzzer will start from fuzzing command " +
@@ -89,7 +91,7 @@ let parseFuzzOption (args: string array) =
           :? Argu.ArguParseException -> printLine (parser.PrintUsage()); exit 1
   { Verbosity = r.GetResult (<@ Verbose @>, defaultValue = 0)
     OutDir = r.GetResult (<@ OutputDir @>)
-    Timelimit = r.GetResult (<@ Timelimit @>)
+    Timelimit = r.GetResult (<@ Timelimit @>, defaultValue = -1)
     FuzzMode = FuzzMode.ofString (r.GetResult(<@ Src @>))
     // Options related to program execution
     TargetProg = System.IO.Path.GetFullPath(r.GetResult (<@ Program @>))

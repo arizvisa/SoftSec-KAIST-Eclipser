@@ -180,7 +180,10 @@ let run args =
   validateFuzzOption opt
   assertFileExists opt.TargetProg
   printfn "Fuzz target : %s" opt.TargetProg
-  printfn "Time limit : %d sec" opt.Timelimit
+  if opt.Timelimit >= 0 then
+      printfn "Time limit : %d sec" opt.Timelimit
+  else
+      printfn "Time limit : %s" "forever"
   createDirectoryIfNotExists opt.OutDir
   Manager.initialize opt.OutDir
   Executor.initialize opt.OutDir opt.Verbosity
