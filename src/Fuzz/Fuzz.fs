@@ -184,6 +184,7 @@ let run args =
       printfn "Time limit : %d sec" opt.Timelimit
   else
       printfn "Time limit : %s" "forever"
+  printfn "Using default seed queue: %s" opt.QueueDir
   createDirectoryIfNotExists opt.OutDir
   Manager.initialize opt.OutDir
   Executor.initialize opt.OutDir opt.Verbosity
@@ -193,7 +194,7 @@ let run args =
     Executor.initForkServer opt
   let initialSeeds = initializeSeeds opt
   let initItems = List.map (fun s -> (Favored, s)) initialSeeds
-  let queueDir = sprintf "%s/.internal" opt.OutDir
+  let queueDir = opt.QueueDir
   let greyConcQueue = ConcolicQueue.initialize queueDir
   let greyConcQueue = List.fold ConcolicQueue.enqueue greyConcQueue initItems
   let randFuzzQueue = RandFuzzQueue.initialize queueDir

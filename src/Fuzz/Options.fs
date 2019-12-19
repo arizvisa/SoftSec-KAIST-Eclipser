@@ -26,6 +26,8 @@ type FuzzerCLI =
   | [<Unique>] NSpawn of int
   | [<Unique>] GreyConcolicOnly
   | [<Unique>] RandFuzzOnly
+  // Options to change the paths that are used
+  | [<Unique>] QueueDir of path: string
 with
   interface IArgParserTemplate with
     member s.Usage =
@@ -59,6 +61,8 @@ with
                     "concolic testing. 'N_spawn' parameter in the paper."
       | GreyConcolicOnly -> "Perform grey-box concolic testing only."
       | RandFuzzOnly -> "Perform random fuzzing only."
+      // Options to change the paths that are used
+      | QueueDir _ -> "Specify the seed queue directory (default: $OutputDir/.internal)"
 
 type FuzzOption = {
   Verbosity         : int
@@ -82,6 +86,8 @@ type FuzzOption = {
   NSpawn            : int
   GreyConcolicOnly  : bool
   RandFuzzOnly      : bool
+  // Options to change the paths that are used
+  QueueDir          : string
 }
 
 let parseFuzzOption (args: string array) =
@@ -89,6 +95,7 @@ let parseFuzzOption (args: string array) =
   let parser = ArgumentParser.Create<FuzzerCLI> (programName = cmdPrefix)
   let r = try parser.Parse(args) with
           :? Argu.ArguParseException -> printLine (parser.PrintUsage()); exit 1
+  let defaultQueue = sprintf "%s/.internal" (r.GetResult (<@ OutputDir @>))
   { Verbosity = r.GetResult (<@ Verbose @>, defaultValue = 0)
     OutDir = r.GetResult (<@ OutputDir @>)
     Timelimit = r.GetResult (<@ Timelimit @>, defaultValue = -1)
@@ -110,7 +117,10 @@ let parseFuzzOption (args: string array) =
     NSolve = r.GetResult(<@ NSolve @>, defaultValue = 600)
     NSpawn = r.GetResult(<@ NSpawn @>, defaultValue = 10)
     GreyConcolicOnly = r.Contains(<@ GreyConcolicOnly @>)
-    RandFuzzOnly = r.Contains(<@ RandFuzzOnly @>) }
+    RandFuzzOnly = r.Contains(<@ RandFuzzOnly @>)
+    // Options to change the paths that are used
+    QueueDir = r.GetResult(<@ QueueDir @>, defaultValue = defaultQueue)
+    }
 
 let validateFuzzOption opt =
   if opt.FuzzMode = FileFuzz && opt.Filepath = "" then
