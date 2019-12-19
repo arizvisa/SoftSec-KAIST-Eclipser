@@ -184,10 +184,14 @@ let run args =
       printfn "Time limit : %d sec" opt.Timelimit
   else
       printfn "Time limit : %s" "forever"
-  printfn "Using default seed queue: %s" opt.QueueDir
+  printfn "Using working directory: %s" opt.WorkDir
+  printfn "Using seed queue: %s" opt.QueueDir
+  printfn "Using output directory: %s" opt.OutDir
+  createDirectoryIfNotExists opt.QueueDir
+  createDirectoryIfNotExists opt.WorkDir
   createDirectoryIfNotExists opt.OutDir
   Manager.initialize opt.OutDir
-  Executor.initialize opt.OutDir opt.Verbosity
+  Executor.initialize opt.WorkDir opt.Verbosity
   Executor.initialize_exec Executor.TimeoutHandling.SendSigterm
   Executor.prepareSharedMem ()
   if opt.FuzzMode = StdinFuzz || opt.FuzzMode = FileFuzz then

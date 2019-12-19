@@ -28,6 +28,7 @@ type FuzzerCLI =
   | [<Unique>] RandFuzzOnly
   // Options to change the paths that are used
   | [<Unique>] QueueDir of path: string
+  | [<AltCommandLine("-w")>] [<Unique>] WorkDir of path: string
 with
   interface IArgParserTemplate with
     member s.Usage =
@@ -63,6 +64,9 @@ with
       | RandFuzzOnly -> "Perform random fuzzing only."
       // Options to change the paths that are used
       | QueueDir _ -> "Specify the seed queue directory (default: $OutputDir/.internal)"
+      | WorkDir _ -> "Specify the working directory (default: $OutputDir)\n" +
+                     "This directory will be used to store temporary files\n" +
+                     "containing the current state when fuzzing."
 
 type FuzzOption = {
   Verbosity         : int
@@ -88,6 +92,7 @@ type FuzzOption = {
   RandFuzzOnly      : bool
   // Options to change the paths that are used
   QueueDir          : string
+  WorkDir           : string
 }
 
 let parseFuzzOption (args: string array) =
@@ -95,9 +100,10 @@ let parseFuzzOption (args: string array) =
   let parser = ArgumentParser.Create<FuzzerCLI> (programName = cmdPrefix)
   let r = try parser.Parse(args) with
           :? Argu.ArguParseException -> printLine (parser.PrintUsage()); exit 1
-  let defaultQueue = sprintf "%s/.internal" (r.GetResult (<@ OutputDir @>))
+  let defaultDirectory = r.GetResult (<@ OutputDir @>)
+  let defaultQueue = sprintf "%s/.internal" defaultDirectory
   { Verbosity = r.GetResult (<@ Verbose @>, defaultValue = 0)
-    OutDir = r.GetResult (<@ OutputDir @>)
+    OutDir = defaultDirectory
     Timelimit = r.GetResult (<@ Timelimit @>, defaultValue = -1)
     FuzzMode = FuzzMode.ofString (r.GetResult(<@ Src @>))
     // Options related to program execution
@@ -120,6 +126,7 @@ let parseFuzzOption (args: string array) =
     RandFuzzOnly = r.Contains(<@ RandFuzzOnly @>)
     // Options to change the paths that are used
     QueueDir = r.GetResult(<@ QueueDir @>, defaultValue = defaultQueue)
+    WorkDir = r.GetResult(<@ WorkDir @>, defaultValue = defaultDirectory)
     }
 
 let validateFuzzOption opt =
