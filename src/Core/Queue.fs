@@ -165,9 +165,9 @@ module FileQueue =
     in {
       Name = name
       Directory = directory
-      UpperIdx = Seq.max indices
-      LowerIdx = Seq.min indices
-      Finger = Seq.min indices
+      UpperIdx = if Seq.isEmpty indices then 0 else Seq.max indices
+      LowerIdx = if Seq.isEmpty indices then 0 else Seq.min indices
+      Finger = if Seq.isEmpty indices then 0 else Seq.min indices
       MaxCount = FileQueueMaxSize
     }
 
