@@ -126,7 +126,7 @@ module FileQueue =
   exception EmptyException
   exception InvalidFingerException
 
-  let initialize name directory =
+  let create name directory =
     ignore (System.IO.Directory.CreateDirectory(directory))
     { Name = name
       Directory = directory
@@ -134,6 +134,48 @@ module FileQueue =
       LowerIdx = 0
       Finger = 0
       MaxCount = FileQueueMaxSize }
+
+  let load name directory =
+    if not (System.IO.Directory.Exists directory) then
+      raise (System.IO.DirectoryNotFoundException directory)
+    let splitpath (ch : char) (path : string) =
+      let dir = System.IO.Path.GetDirectoryName(path) in
+      let name = System.IO.Path.GetFileName(path) in
+      match name.Split(ch, 2) with
+      | [| prefix; suffix |] -> (dir, prefix, suffix)
+      | _ -> raise (failwith "Unexpected pattern")
+    in
+    let getnumber (s : string) =
+      let result = ref 0 in
+      if System.Int32.TryParse(s, result) then
+        Some (unbox<int> !result)
+      else
+        None
+    in
+    let indices =
+      System.IO.Directory.EnumerateFiles directory |>
+      Seq.map (splitpath '-') |>
+      Seq.choose (
+        fun (dir, prefix, suffix) ->
+          if dir = directory && prefix = name then
+            getnumber suffix
+          else
+            None
+      ) |> Seq.sort
+    in {
+      Name = name
+      Directory = directory
+      UpperIdx = Seq.max indices
+      LowerIdx = Seq.min indices
+      Finger = Seq.min indices
+      MaxCount = FileQueueMaxSize
+    }
+
+  let initialize name directory =
+    if System.IO.Directory.Exists(directory) then
+        load name directory
+    else
+        create name directory
 
   let getSize queue =
     queue.UpperIdx - queue.LowerIdx
