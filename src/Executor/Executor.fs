@@ -83,13 +83,13 @@ let prepareSharedMem () =
   set_env("CK_SHM_ID", string shmID)
 
 let initialize outdir verbosity =
-  pathHashLog <- System.IO.Path.Combine(outdir, ".path_hash")
-  branchTraceLog <- System.IO.Path.Combine(outdir, ".branch_trace")
-  coverageLog <- System.IO.Path.Combine(outdir, ".coverage")
+  pathHashLog <- System.IO.Path.Combine(outdir, "path_hash")
+  branchTraceLog <- System.IO.Path.Combine(outdir, "branch_trace")
+  coverageLog <- System.IO.Path.Combine(outdir, "coverage")
   // 'nodeLog' is managed in tracer side, we just provide a dedicated file path.
-  nodeLog <- System.IO.Path.Combine(outdir, ".node_raw")
-  syscallTraceLog <- System.IO.Path.Combine(outdir, ".syscall_trace")
-  dbgLog <- System.IO.Path.Combine(outdir, ".debug_msg")
+  nodeLog <- System.IO.Path.Combine(outdir, "node_raw")
+  syscallTraceLog <- System.IO.Path.Combine(outdir, "syscall_trace")
+  dbgLog <- System.IO.Path.Combine(outdir, "debug_msg")
   set_env("CK_HASH_LOG", System.IO.Path.GetFullPath(pathHashLog))
   set_env("CK_FEED_LOG", System.IO.Path.GetFullPath(branchTraceLog))
   set_env("CK_COVERAGE_LOG", System.IO.Path.GetFullPath(coverageLog))
