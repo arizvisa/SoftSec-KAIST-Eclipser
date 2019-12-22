@@ -39,6 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Fsharp.Control.Reactive" Version="4.2.0" />
     <PackageReference Include="FSharp.Core" Version="4.3.2" />
     <PackageReference Include="Argu" Version="5.1.0" />
     <PackageReference Include="FSharp.Data" Version="3.0.0" />
