@@ -147,6 +147,8 @@ let rec fuzzLoop opt concQ randQ =
     let randQ = if RandFuzzQueue.timeToMinimize randQ
                 then RandFuzzQueue.minimize randQ opt
                 else randQ
+    ConcolicQueue.save concQ (sprintf "%s/concolic-queue" opt.WorkDir)
+    RandFuzzQueue.save randQ (sprintf "%s/random-queue" opt.WorkDir)
     fuzzLoop opt concQ randQ
 
 let fuzzingTimer timeoutSec queueDir = async {
@@ -198,13 +200,12 @@ let run args =
     Executor.initForkServer opt
   let initialSeeds = initializeSeeds opt
   let initItems = List.map (fun s -> (Favored, s)) initialSeeds
-  let queueDir = opt.QueueDir
-  let greyConcQueue = ConcolicQueue.initialize queueDir
+  let greyConcQueue = ConcolicQueue.initialize opt.QueueDir (sprintf "%s/concolic-queue" opt.WorkDir)
   let greyConcQueue = List.fold ConcolicQueue.enqueue greyConcQueue initItems
-  let randFuzzQueue = RandFuzzQueue.initialize queueDir
+  let randFuzzQueue = RandFuzzQueue.initialize opt.QueueDir (sprintf "%s/random-queue" opt.WorkDir)
   let randFuzzQueue = List.fold RandFuzzQueue.enqueue randFuzzQueue initItems
   log "Fuzzing starts"
-  initialize queueDir
+  initialize opt.QueueDir
   if opt.Timelimit >= 0 then
-    Async.Start (fuzzingTimer opt.Timelimit queueDir)
+    Async.Start (fuzzingTimer opt.Timelimit opt.QueueDir)
   fuzzLoop opt greyConcQueue randFuzzQueue

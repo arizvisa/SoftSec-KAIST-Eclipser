@@ -1,6 +1,7 @@
 namespace Eclipser
 
 open Config
+open MBrace.FsPickler
 
 /// A simple, purely functional queue.
 type Queue<'a > = {
@@ -12,7 +13,20 @@ module Queue =
 
   exception EmptyException
 
+  let serializer = FsPickler.CreateBinarySerializer ()
+
   let empty = { Enqueued = []; ToDequeue = [] }
+
+  let load<'a> path =
+    match System.IO.File.Exists path with
+    | false -> empty
+    | true ->
+      let data = System.IO.File.ReadAllBytes(path) in
+      serializer.UnPickle<Queue<'a>> data
+
+  let save q path =
+    let data = serializer.Pickle q in
+    System.IO.File.WriteAllBytes(path, data)
 
   let getSize q = q.Enqueued.Length + q.ToDequeue.Length
 
@@ -69,10 +83,20 @@ module DurableQueue =
   exception EmptyException
   exception InvalidFingerException
 
+  let serializer = FsPickler.CreateBinarySerializer ()
+
   let initialize initElem =
     { Elems = Array.create DurableQueueMaxSize initElem
       Count = 0
       Finger = 0 }
+
+  let save queue path =
+    let data = serializer.Pickle queue in
+    System.IO.File.WriteAllBytes(path, data)
+
+  let load<'a> path =
+    let data = System.IO.File.ReadAllBytes(path) in
+    serializer.UnPickle<DurableQueue<'a>> data
 
   let getSize queue = queue.Count
 

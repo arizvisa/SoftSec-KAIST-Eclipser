@@ -14,9 +14,11 @@ module ConcolicQueue =
 
   let serializer = FsPickler.CreateBinarySerializer ()
 
-  let initialize queueDir  =
-    { FavoredQueue = Queue.empty
+  let initialize queueDir favoredQueuePath =
+    { FavoredQueue = Queue.load favoredQueuePath
       NormalQueue = FileQueue.initialize "concolic-seed" queueDir }
+
+  let save queue path = Queue.save queue.FavoredQueue path
 
   let isEmpty queue =
     Queue.isEmpty queue.FavoredQueue && FileQueue.isEmpty queue.NormalQueue
@@ -60,12 +62,21 @@ module RandFuzzQueue =
 
   let serializer = FsPickler.CreateBinarySerializer ()
 
-  let initialize queueDir =
-    let dummySeed = Seed.make Args [] 0 0
-    { FavoredQueue = DurableQueue.initialize dummySeed
-      NormalQueue = FileQueue.initialize "rand-seed" queueDir
+  let initialize queueDir dummyQueuePath =
+    let dummyQueue =
+      if System.IO.File.Exists dummyQueuePath then
+        DurableQueue.load dummyQueuePath
+      else
+        let dummySeed = Seed.make Args [] 0 0 in
+        DurableQueue.initialize dummySeed
+    in
+    let fileQueue = FileQueue.initialize "rand-seed" queueDir
+    { FavoredQueue = dummyQueue
+      NormalQueue = fileQueue
       LastMinimizedCount = 0
       RemoveCount = 0 }
+
+  let save queue path = DurableQueue.save queue.FavoredQueue path
 
   let enqueue queue (priority, seed) =
     match priority with
